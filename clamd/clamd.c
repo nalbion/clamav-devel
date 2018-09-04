@@ -54,6 +54,18 @@
 #include <sys/resource.h>
 #endif
 
+#ifdef APPDYNAMICS
+#include <appdynamics.h>
+const char APP_NAME[] = "ClamAV";
+const char TIER_NAME[] = "clamd-tier";
+const char NODE_NAME[] = "clamd-node";
+const char CONTROLLER_HOST[] = "TODO.saas.appdynamics.com";
+const int CONTROLLER_PORT = 8080;
+const char CONTROLLER_ACCOUNT[] = "TODO";
+const char CONTROLLER_ACCESS_KEY[] = "TODO";
+const int CONTROLLER_USE_SSL = 0;
+#endif
+
 #include "target.h"
 
 #include "libclamav/clamav.h"
@@ -356,6 +368,25 @@ int main(int argc, char **argv)
         }
 #endif
 
+#ifdef APPDYNAMICS
+        struct appd_config* cfg = appd_config_init(); // appd_config_init() resets the configuration object and pass back an handle/pointer
+        appd_config_set_app_name(cfg, APP_NAME);
+        appd_config_set_tier_name(cfg, TIER_NAME);
+        appd_config_set_node_name(cfg, NODE_NAME);
+        appd_config_set_controller_host(cfg, CONTROLLER_HOST);
+        appd_config_set_controller_port(cfg, CONTROLLER_PORT);
+        appd_config_set_controller_account(cfg, CONTROLLER_ACCOUNT);
+        appd_config_set_controller_access_key(cfg, CONTROLLER_ACCESS_KEY);
+        appd_config_set_controller_use_ssl(cfg, CONTROLLER_USE_SSL);
+
+        int initRC = appd_sdk_init(cfg);
+
+        if (initRC) {
+            logg("#Error: sdk init: %d\n", initRC);
+            ret -1;
+            break;
+        }
+#endif
 
         if(logg_size)
             logg("#Log file size limited to %lld bytes.\n", (long long int)logg_size);

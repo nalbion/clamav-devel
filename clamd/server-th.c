@@ -45,6 +45,11 @@
 #ifdef C_SOLARIS
 #include <stdio_ext.h>
 #endif
+
+#ifdef APPDYNAMICS
+#include <appdynamics.h>
+#endif
+
 #include "libclamav/clamav.h"
 
 #include "shared/output.h"
@@ -102,6 +107,10 @@ static void scanner_thread(void *arg)
     pthread_sigmask(SIG_SETMASK, &sigset, NULL);
 #endif
 
+#ifdef APPDYNAMICS
+    appd_bt_handle btHandle = appd_bt_begin("scanner_thread", NULL);
+#endif
+
     ret = command(conn, &virus);
     if (ret == -1) {
 	pthread_mutex_lock(&exit_mutex);
@@ -125,6 +134,22 @@ static void scanner_thread(void *arg)
     }
     cl_engine_free(conn->engine);
     free(conn);
+#ifdef APPDYNAMICS
+    if (appd_bt_is_snapshotting(btHandle)) {
+        char sd[4];
+        sprintf(sd, "%d", conn->sd);
+        appd_bt_add_user_data(btHandle, "FD", sd);
+        appd_bt_add_user_data(btHandle, "file name", conn->filename);
+        appd_bt_add_user_data(btHandle, "quota", conn->quota);
+
+        if (errors) {
+            char err[20];
+            sprintf(err, "Error scanning: %d", errors);
+            appd_bt_add_error(btHandle, APPD_LEVEL_ERROR, err, TRUE);
+        }
+    }
+    appd_bt_end(btHandle);
+#endif
     return;
 }
 
