@@ -138,9 +138,11 @@ static void scanner_thread(void *arg)
     if (appd_bt_is_snapshotting(btHandle)) {
         char sd[4];
         sprintf(sd, "%d", conn->sd);
+        char quota[10];
+        sprintf(quota, "%ld", conn->quota);
         appd_bt_add_user_data(btHandle, "FD", sd);
         appd_bt_add_user_data(btHandle, "file name", conn->filename);
-        appd_bt_add_user_data(btHandle, "quota", conn->quota);
+        appd_bt_add_user_data(btHandle, "quota", quota);
 
         if (errors) {
             char err[20];
